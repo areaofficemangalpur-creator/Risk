@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="ne">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NRB 2.2 कर्जा वर्गीकरण रिपोर्ट</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F4F6F3; --surface:#FFFFFF; --ink:#1C2A2E; --muted:#5B6B70;
+  --line:#D9DFDA; --line2:#E8ECE8; --brand:#124E55; --brand2:#EAF2F1; --focus:#0B7285;
+  --c0:#3F8F6B; --c1:#9BB84B; --c2:#E3B23C; --c3:#E07B39; --c4:#C8453B; --c5:#7A2545;
+  --warn:#B42318;
+}
+*{box-sizing:border-box}
+html{scroll-padding-top:64px}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font-family:'Mukta','Noto Sans Devanagari','Nirmala UI','Mangal',system-ui,-apple-system,'Segoe UI',sans-serif;
+  font-size:15px;line-height:1.6;font-variant-numeric:tabular-nums}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+
+/* header */
+.top{background:var(--brand);color:#fff;padding:14px 24px;display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center;justify-content:space-between}
+.top h1{margin:0;font-size:21px;font-weight:700;line-height:1.3}
+.finfo{display:flex;flex-wrap:wrap;gap:2px 18px;font-size:13px;opacity:.88;margin-top:2px}
+.tools{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center}
+.rd{display:flex;align-items:center;gap:8px;font-size:14px}
+.rd input{background:#fff;color:var(--ink);border:0;border-radius:4px;padding:5px 8px;height:34px}
+.btn{display:inline-flex;align-items:center;height:36px;padding:0 16px;border-radius:4px;background:#fff;color:var(--brand);font-weight:600;cursor:pointer;border:0}
+.btn:hover{background:var(--brand2)}
+.banner{padding:10px 24px;font-size:14px;font-weight:500}
+.banner.err{background:#FDECEA;color:var(--warn);border-bottom:1px solid #F3C1BC}
+.banner.note{background:#FFF6DD;color:#6B4E00;border-bottom:1px solid #EBD79A}
+
+/* tabs */
+.tabs{position:sticky;top:0;z-index:5;background:var(--paper);border-bottom:1px solid var(--line);padding:0 24px;display:flex;gap:4px;overflow-x:auto}
+.tabs[hidden]{display:none}
+.tabs button{background:none;border:0;padding:12px 16px 10px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap}
+.tabs button:hover{color:var(--ink)}
+.tabs button.on{color:var(--brand);border-bottom-color:var(--brand)}
+
+main{max-width:1500px;margin:0 auto;padding:22px 24px 60px}
+h2{font-size:18px;margin:0 0 4px;font-weight:700}
+h3{font-size:16px;margin:26px 0 8px;font-weight:700}
+.sub{color:var(--muted);font-size:14px;margin:0 0 14px}
+
+/* controls */
+.controls{display:flex;flex-wrap:wrap;gap:10px 22px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:12px 16px;margin:10px 0 18px}
+.controls label{display:inline-flex;align-items:center;gap:8px;font-weight:500}
+.controls input[type=number],.controls select{height:36px;border:1px solid #B9C3BC;border-radius:4px;padding:0 8px;background:#fff}
+.controls input[type=number]{width:92px}
+.chip{border:1px solid var(--line);border-radius:999px;padding:3px 12px 3px 8px;background:#fff;cursor:pointer}
+.chip input{margin-right:4px}
+.hint{font-size:13px;color:var(--muted);width:100%}
+
+/* KPI band */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);background:var(--surface);border:1px solid var(--line);border-radius:6px;margin-bottom:22px}
+.kpi{padding:14px 18px;border-left:1px solid var(--line)}
+.kpi:first-child{border-left:0}
+.kl{font-size:13px;color:var(--muted);font-weight:500}
+.kv{font-size:26px;font-weight:700;line-height:1.25}
+.ks{font-size:13px;color:var(--muted)}
+.kpi.risk .kv{color:var(--c3)} .kpi.npl .kv{color:var(--c5)}
+
+/* ribbon */
+.ribbon{display:flex;gap:2px;height:12px;border-radius:3px;overflow:hidden;min-width:150px;background:var(--line2)}
+.ribbon.big{height:48px;border-radius:6px;min-width:0}
+.seg{display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:#fff;overflow:hidden}
+.c0{background:var(--c0)}.c1{background:var(--c1)}.c2{background:var(--c2)}.c3{background:var(--c3)}.c4{background:var(--c4)}.c5{background:var(--c5)}
+.seg.c1,.seg.c2{color:var(--ink)}
+.dot{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+.bdg{display:inline-block;padding:0 9px;border-radius:999px;font-size:13px;font-weight:600;color:#fff;white-space:nowrap}
+.bdg.c1,.bdg.c2{color:var(--ink)}
+
+/* tables */
+.scroll{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:6px}
+.scroll.inner{border:0;border-radius:0;background:transparent}
+.tbl{width:100%;border-collapse:collapse;font-size:14px}
+.tbl th{background:#EDF1ED;font-size:13px;font-weight:600;color:#33454A;text-align:left;padding:8px 10px;white-space:nowrap;cursor:pointer;user-select:none;border-bottom:1px solid var(--line)}
+.tbl th.r,.tbl td.r{text-align:right}
+.tbl th:hover{background:#E3E9E3}
+.tbl th .ar{font-style:normal;font-size:10px;margin-left:4px;color:var(--brand)}
+.tbl td{padding:7px 10px;border-bottom:1px solid var(--line2);vertical-align:middle}
+.tbl td small{display:block;font-size:12px;color:var(--muted);line-height:1.3}
+.tbl td.n{color:var(--muted);width:44px}
+.tbl .z{color:#A9B5AD}
+.tbl tr.br td.bn{font-weight:600;white-space:nowrap}
+.tbl tr.br[data-act]{cursor:pointer}
+.tbl tr.br[data-act]:hover td{background:#F1F6F4}
+.tbl tr.br.open td{background:var(--brand2)}
+.tbl tr.br.zero td{color:#9AA6A0}
+.tbl tr.tot td{font-weight:700;background:#F3F6F3;border-top:2px solid #B9C3BC;border-bottom:0}
+.tbl tr.detail>td{padding:0;background:#FAFBFA;border-left:4px solid var(--brand)}
+.tbl tr.detail .tbl th{background:#F1F4F1}
+.tbl tr.detail .tbl td{background:transparent}
+.sum>tbody>tr>td.bn,.sum>thead>tr>th:first-child{position:sticky;left:0;z-index:1}
+.sum>tbody>tr>td.bn{background:var(--surface)}
+.sum>thead>tr>th:first-child{background:#EDF1ED}
+.sum>tbody>tr.br.open>td.bn{background:var(--brand2)}
+.sum>tbody>tr.tot>td.bn{background:#F3F6F3}
+.chev{display:inline-block;width:0;height:0;border-left:6px solid var(--brand);border-top:5px solid transparent;border-bottom:5px solid transparent;margin-right:9px;transition:transform .15s}
+.br.open .chev{transform:rotate(90deg)}
+.bar{display:block;padding:0 6px;background:linear-gradient(90deg,rgba(224,123,57,.28) var(--w,0%),transparent 0)}
+.bar.n{background:linear-gradient(90deg,rgba(122,37,69,.26) var(--w,0%),transparent 0)}
+
+/* drill toolbar */
+.tb{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;margin-bottom:10px}
+.tb .grow{flex:1}
+.tb .cnt{font-size:14px;color:var(--muted)}
+.tb button{height:34px;padding:0 13px;border:1px solid #B9C3BC;background:#fff;border-radius:4px;cursor:pointer;font-weight:500}
+.tb button:hover{background:var(--brand2)}
+.tb button.on{background:var(--brand);border-color:var(--brand);color:#fff}
+.empty{background:var(--surface);border:1px dashed #B9C3BC;border-radius:6px;padding:28px;text-align:center;color:var(--muted)}
+
+/* empty / upload */
+.drop{display:block;background:var(--surface);border:2px dashed #9DB0A8;border-radius:8px;padding:44px 24px;text-align:center;cursor:pointer;max-width:760px;margin:24px auto 0}
+.drop:hover,.drop.over{border-color:var(--brand);background:var(--brand2)}
+.drop b{display:block;font-size:20px;margin-bottom:6px}
+.rules{max-width:760px;margin:26px auto 0;font-size:14px}
+.rules table{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--line)}
+.rules td{padding:6px 12px;border-bottom:1px solid var(--line2)}
+
+@media (max-width:820px){
+  .kpis{grid-template-columns:repeat(2,1fr)} .kpi:nth-child(3){border-left:0} .kpi:nth-child(n+3){border-top:1px solid var(--line)}
+  main{padding:16px 12px 50px} .top{padding:12px} .tabs{padding:0 8px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div>
+    <h1>NRB 2.2 कर्जा वर्गीकरण रिपोर्ट</h1>
+    <div class="finfo" id="finfo"></div>
+  </div>
+  <div class="tools">
+    <label class="rd">रिपोर्ट मिति <input type="date" id="rdate"></label>
+    <label class="btn" for="file">NRB 2.2 रिपोर्ट अपलोड (CSV)</label>
+    <input type="file" id="file" accept=".csv,text/csv" hidden>
+  </div>
+</header>
+<div id="banners"></div>
+<nav class="tabs" id="tabs" role="tablist" hidden></nav>
+<main id="main"></main>
+
+<script>
+'use strict';
+/* ============ सेटिङ ============ */
+// यही सूचीमा शाखा थपघट गर्न सकिन्छ (रिपोर्टमा "Branch Office ..." पछिको नाम)
+const BRANCHES = ['Mangalpur','Thori','Rajahar','Kabilash','Bhanu','Shaktikhor','Bulingtar']
+  .map(n => ({name:n, key:n.toLowerCase()}));
+
+// नियम नं. १ — दिन अनुसार वर्गीकरण
+const CLS = [
+  {ne:'फ्रेस',     rng:'० दिन'},
+  {ne:'पास',       rng:'१–३० दिन'},
+  {ne:'वाच लिस्ट', rng:'३१–९० दिन'},
+  {ne:'कमसल',      rng:'९१–१८० दिन'},
+  {ne:'शंकास्पद',  rng:'१८१–३६५ दिन'},
+  {ne:'खराब',      rng:'३६६ दिन माथि'}
+];
+const NEXT_AT = [1,31,91,181,366,null];          // अर्को वर्गमा पुग्ने दिन
+const ci_of = d => d<=0?0 : d<=30?1 : d<=90?2 : d<=180?3 : d<=365?4 : 5;
+const DAY = 86400000;
+
+/* ============ सहायक ============ */
+const $ = (s,el=document) => el.querySelector(s);
+const esc = s => String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt = n => Math.round(n).toLocaleString('en-IN');
+const p2 = n => String(n).padStart(2,'0');
+const fdate = ms => { if(ms==null) return ''; const d=new Date(ms); return `${p2(d.getUTCDate())}/${p2(d.getUTCMonth()+1)}/${d.getUTCFullYear()}`; };
+const todayYMD = () => { const d=new Date(); return `${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}`; };
+const repMs = () => { const m=(S.rdate||todayYMD()).split('-'); return Date.UTC(+m[0],+m[1]-1,+m[2]); };
+const pctv = (a,b) => b>0 ? a/b*100 : 0;
+const pctS = v => v.toFixed(2)+'%';
+const DASH = '<span class="z">–</span>';
+const badge = i => `<span class="bdg c${i}">${CLS[i].ne}</span>`;
+
+const BS_MONTHS=['बैशाख','जेठ','असार','साउन','भदौ','असोज','कार्तिक','मंसिर','पौष','माघ','फागुन','चैत'];
+// वि.सं. क्यालेन्डर: वर्ष → [१ बैशाखको ई.सं. मिति, १२ महिनाको दिन संख्या]
+const BS_TAB={"2070":["2013-04-14",[31,31,31,32,31,31,29,30,30,29,30,30]],"2071":["2014-04-14",[31,31,32,31,31,31,30,29,30,29,30,30]],"2072":["2015-04-14",[31,32,31,32,31,30,30,29,30,29,30,30]],"2073":["2016-04-13",[31,32,31,32,31,30,30,30,29,29,30,31]],"2074":["2017-04-14",[31,31,31,32,31,31,30,29,30,29,30,30]],"2075":["2018-04-14",[31,31,32,31,31,31,30,29,30,29,30,30]],"2076":["2019-04-14",[31,32,31,32,31,30,30,30,29,29,30,30]],"2077":["2020-04-13",[31,32,31,32,31,30,30,30,29,30,29,31]],"2078":["2021-04-14",[31,31,31,32,31,31,30,29,30,29,30,30]],"2079":["2022-04-14",[31,31,32,31,31,31,30,29,30,29,30,30]],"2080":["2023-04-14",[31,32,31,32,31,30,30,30,29,29,30,30]],"2081":["2024-04-13",[31,32,31,32,31,30,30,30,29,30,29,31]],"2082":["2025-04-14",[31,31,32,31,31,31,30,29,30,29,30,30]],"2083":["2026-04-14",[31,31,32,31,31,31,30,29,30,29,30,30]],"2084":["2027-04-14",[31,31,32,31,31,30,30,30,29,30,30,30]],"2085":["2028-04-13",[31,32,31,32,30,31,30,30,29,30,30,30]],"2086":["2029-04-14",[30,32,31,32,31,30,30,30,29,30,30,30]],"2087":["2030-04-14",[31,31,32,31,31,31,30,29,30,30,30,30]],"2088":["2031-04-15",[30,31,32,32,30,31,30,30,29,30,30,30]],"2089":["2032-04-14",[30,32,31,32,31,30,30,30,29,30,30,30]],"2090":["2033-04-14",[30,32,31,32,31,30,30,30,29,30,30,30]]};
+const BS_START=Object.keys(BS_TAB).map(Number).sort((a,b)=>a-b).map(y=>({y,ms:Date.parse(BS_TAB[y][0]+'T00:00:00Z'),len:BS_TAB[y][1]}));
+function adToBS(ms){
+  for(let i=BS_START.length-1;i>=0;i--){
+    const Y=BS_START[i]; if(ms<Y.ms) continue;
+    let off=Math.floor((ms-Y.ms)/DAY), m=0, start=Y.ms;
+    while(m<11 && off>=Y.len[m]){ off-=Y.len[m]; start+=Y.len[m]*DAY; m++; }
+    return {y:Y.y,m:m+1,d:off+1,startMs:start};
+  }
+  return {y:BS_START[0].y,m:1,d:1,startMs:BS_START[0].ms};
+}
+const bsStr=b=>`${b.y}/${p2(b.m)}/${p2(b.d)}`;
+const bsMonth=b=>`${BS_MONTHS[b.m-1]} ${b.y}`;
+
+/* ============ स्टोरेज (Google Sites iframe मा बन्द हुन सक्छ) ============ */
+const KEY = 'nrb22_area_v1';
+let storeOK = false;
+try{ localStorage.setItem('__t','1'); localStorage.removeItem('__t'); storeOK = true; }catch(e){}
+
+/* ============ अवस्था ============ */
+const S = {recs:[], file:'', when:'', total:0, others:0, missing:[], rdate:todayYMD(), tab:'dash'};
+const UI = {ov:{from:1,to:1}, npl:{n:15}, chg:{n:15, cls:[1,2,3,4]}, fid:{m:'all', dayf:'all'}};
+const TS = {};   // तालिकाहरूको अवस्था (sort / खुला शाखा)
+
+function save(){
+  if(!storeOK) return;
+  try{ localStorage.setItem(KEY, JSON.stringify({file:S.file,when:S.when,total:S.total,others:S.others,missing:S.missing,rdate:S.rdate,recs:S.recs})); }
+  catch(e){ banner('note','रिपोर्ट धेरै ठूलो भएकाले ब्राउजरमा सुरक्षित गर्न सकिएन — रिफ्रेस गरेपछि फेरि अपलोड गर्नुपर्छ।'); }
+}
+function load(){
+  if(!storeOK) return;
+  try{
+    const j = JSON.parse(localStorage.getItem(KEY)||'null');
+    if(j && Array.isArray(j.recs) && j.recs.length){
+      Object.assign(S,{file:j.file,when:j.when,total:j.total,others:j.others,missing:j.missing||[],rdate:j.rdate||todayYMD(),recs:j.recs});
+      S.recs.forEach(r=>{ r.ci = ci_of(r.days); });
+    }
+  }catch(e){}
+}
+
+/* ============ CSV पार्सर ============ */
+function parseCSV(text){
+  if(text.charCodeAt(0)===0xFEFF) text = text.slice(1);
+  const rows=[]; let row=[], cur='', q=false, i=0; const n=text.length;
+  while(i<n){
+    const c=text[i];
+    if(q){
+      if(c==='"'){ if(text[i+1]==='"'){ cur+='"'; i+=2; continue; } q=false; i++; continue; }
+      cur+=c; i++; continue;
+    }
+    if(c==='"'){ q=true; i++; continue; }
+    if(c===','){ row.push(cur); cur=''; i++; continue; }
+    if(c==='\r'){ i++; continue; }
+    if(c==='\n'){ row.push(cur); rows.push(row); row=[]; cur=''; i++; continue; }
+    cur+=c; i++;
+  }
+  if(cur!==''||row.length){ row.push(cur); rows.push(row); }
+  return rows;
+}
+const norm = s => String(s||'').toLowerCase().replace(/[\r\n]+/g,' ').replace(/\./g,' ').replace(/\s+/g,' ').trim();
+const FIELDS = {
+  branch:/^branch$/, group:/^group name/, mcode:/^member code/, name:/^name of borrower/, phone:/^phone/,
+  disb:/^(disperse|disburse)/, acc:/^loan account/, prod:/^loan prod/, heading:/^loan heading$/,
+  approved:/^approved limit/, out:/^outstanding principal/, oint:/^outstand\w* interest/, od:/^overdue principal/,
+  mat:/^maturity/, cls:/^classification$/, days:/^days$/, inst:/^instal/
+};
+// एक-लाइन र दुई-लाइन दुवै हेडर मिल्ने गरी: पहिले row0, नभेटिए row1...
+function findCols(rows){
+  const map={}; let r=0;
+  for(; r<rows.length && r<5; r++){
+    if(/^\d+$/.test(String(rows[r][0]||'').trim())) break;
+    rows[r].forEach((cell,ci)=>{
+      const t=norm(cell); if(!t) return;
+      for(const k in FIELDS) if(map[k]===undefined && FIELDS[k].test(t)) map[k]=ci;
+    });
+  }
+  return {map, hdrEnd:r};
+}
+function num(v){ const x=parseFloat(String(v==null?'':v).replace(/[,\s]/g,'')); return isFinite(x)?x:0; }
+function pdate(s){
+  s=String(s||'').trim(); let m;
+  if((m=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/))) return Date.UTC(+m[3],+m[2]-1,+m[1]);
+  if((m=s.match(/^(\d{4})-(\d{2})-(\d{2})/))) return Date.UTC(+m[1],+m[2]-1,+m[3]);
+  return null;
+}
+function toRecords(rows,map,hdrEnd){
+  const g=(r,k)=> map[k]===undefined ? '' : (r[map[k]]==null?'':r[map[k]]);
+  const byKey=new Map(BRANCHES.map(b=>[b.key,b]));
+  const allBr=new Set(), found=new Set(); let others=0; const recs=[];
+  for(let i=hdrEnd;i<rows.length;i++){
+    const r=rows[i]; if(!r||!r.length) continue;
+    if(/^total/i.test(String(r[0]||'').trim())) continue;
+    const braw=String(g(r,'branch')).trim(); if(!braw) continue;
+    const key=braw.toLowerCase().replace(/^branch office/,'').replace(/\s+/g,' ').trim();
+    allBr.add(key);
+    const b=byKey.get(key);
+    if(!b){ others++; continue; }
+    found.add(key);
+    const days=Math.max(0,Math.round(num(g(r,'days'))));
+    const mcode=String(g(r,'mcode')).trim();
+    recs.push({
+      br:b.name, bk:b.key, group:String(g(r,'group')).trim(), mcode, mkey:b.key+'|'+mcode,
+      name:String(g(r,'name')).trim(), phone:String(g(r,'phone')).trim(),
+      disb:pdate(g(r,'disb')), acc:String(g(r,'acc')).trim(), prod:String(g(r,'prod')).trim(),
+      heading:String(g(r,'heading')).trim(),
+      approved:num(g(r,'approved')), out:num(g(r,'out')), oint:num(g(r,'oint')), od:num(g(r,'od')),
+      mat:pdate(g(r,'mat')), fcls:String(g(r,'cls')).trim(), days, inst:num(g(r,'inst')), ci:ci_of(days)
+    });
+  }
+  return {recs, total:allBr.size, others, missing:BRANCHES.filter(b=>!found.has(b.key)).map(b=>b.name)};
+}
+async function handleFile(file){
+  try{ handleText(file.name, await file.text()); }
+  catch(e){ banner('err','फाइल पढ्न सकिएन: '+e.message); }
+}
+function handleText(name,text){
+  const rows=parseCSV(text);
+  const {map,hdrEnd}=findCols(rows);
+  const need=['branch','mcode','name','out','days'];
+  const miss=need.filter(k=>map[k]===undefined);
+  if(miss.length){ banner('err','यो NRB 2.2 (N002) रिपोर्ट जस्तो देखिएन — यी कोलम भेटिएन: '+miss.join(', ')); return; }
+  const res=toRecords(rows,map,hdrEnd);
+  if(!res.recs.length){ banner('err','फाइलमा तोकिएका ७ शाखाको कुनै कर्जा भेटिएन।'); return; }
+  Object.assign(S,{recs:res.recs,file:name,total:res.total,others:res.others,missing:res.missing,
+    when:new Date().toLocaleString('en-GB'), rdate:todayYMD(), tab:'dash'});
+  Object.keys(TS).forEach(k=>delete TS[k]);
+  save(); render();
+}
+
+/* ============ समूहीकरण ============ */
+function finalize(g){
+  const s=new Set(); let out=0,od=0,oint=0,ap=0;
+  g.recs.forEach(r=>{ s.add(r.mkey); out+=r.out; od+=r.od; oint+=r.oint; ap+=r.approved; });
+  g.members=s.size; g.loans=g.recs.length; g.out=out; g.od=od; g.oint=oint; g.approved=ap;
+  return g;
+}
+function groupBy(recs){
+  const m=new Map(BRANCHES.map(b=>[b.key,{br:b.name,key:b.key,recs:[]}]));
+  recs.forEach(r=>m.get(r.bk).recs.push(r));
+  return [...m.values()].map(finalize);
+}
+const totalOf = recs => finalize({br:'जम्मा',key:'*',recs});
+function classAgg(recs){
+  const a=CLS.map(()=>({loans:0,out:0,od:0,mem:new Set()}));
+  recs.forEach(r=>{ const x=a[r.ci]; x.loans++; x.out+=r.out; x.od+=r.od; x.mem.add(r.mkey); });
+  return a;
+}
+
+/* ============ जेनेरिक "शाखागत → सदस्यगत" तालिका ============ */
+const cmp=(a,b)=> (typeof a==='number'&&typeof b==='number') ? a-b : String(a).localeCompare(String(b),'en',{numeric:true});
+const svOf=(c,r)=> c.sv ? c.sv(r) : c.get(r);
+function disp(c,v){ return c.num ? (v===0?DASH:fmt(v)) : esc(v); }
+
+function drillRender(id,host,cfg){
+  const st=TS[id]||(TS[id]={open:new Set(),sk:null,sd:1,mk:null,md:1,view:'branch',init:false});
+  if(!st.init){ st.init=true; st.sk=cfg.sort&&cfg.sort.k||null; st.sd=cfg.sort&&cfg.sort.dir||1; st.mk=cfg.msort.k; st.md=cfg.msort.dir; }
+  st.host=host; st.cfg=cfg;
+  host.innerHTML=build(id);
+}
+function redraw(id){ const st=TS[id]; st.host.innerHTML=build(id); }
+
+function build(id){
+  const st=TS[id], c=st.cfg;
+  if(!c.bare && !c.recs.length) return `<div class="empty">${c.empty}</div>`;
+  const groups=groupBy(c.recs), tot=totalOf(c.recs), cols=c.sumCols;
+  if(st.sk){
+    if(st.sk==='br') groups.sort((a,b)=>cmp(a.br,b.br)*st.sd);
+    else { const col=cols.find(x=>x.k===st.sk); if(col) groups.sort((a,b)=>cmp(col.get(a),col.get(b))*st.sd); }
+  }
+  const arrow=k=>`<i class="ar">${st.sk===k?(st.sd>0?'▲':'▼'):''}</i>`;
+  const head=`<tr><th data-act="sort" data-t="${id}" data-k="br">शाखा${arrow('br')}</th>`+
+    cols.map(col=>`<th class="${col.num?'r':''}" data-act="sort" data-t="${id}" data-k="${col.k}">${col.lh||esc(col.label)}${arrow(col.k)}</th>`).join('')+`</tr>`;
+  const cell=(col,g)=>`<td class="${col.num?'r':''}">${col.html?col.html(g):disp(col,col.get(g))}</td>`;
+  const nC=cols.length+1;
+  const body=groups.map(g=>{
+    const click=!c.bare && g.loans>0, open=click && st.open.has(g.key);
+    let h=`<tr class="br${open?' open':''}${g.loans?'':' zero'}"${click?` data-act="toggle" data-t="${id}" data-b="${g.key}" tabindex="0" role="button" aria-expanded="${open}"`:''}>`+
+      `<td class="bn">${click?'<i class="chev"></i>':''}${esc(g.br)}</td>${cols.map(col=>cell(col,g)).join('')}</tr>`;
+    if(open) h+=`<tr class="detail"><td colspan="${nC}"><div class="scroll inner">${memberTable(id,g.recs,false)}</div></td></tr>`;
+    return h;
+  }).join('');
+  const foot=`<tr class="tot"><td class="bn">जम्मा</td>${cols.map(col=>cell(col,tot)).join('')}</tr>`;
+  const sumTbl=`<div class="scroll"><table class="tbl sum"><thead>${head}</thead><tbody>${body}${foot}</tbody></table></div>`;
+  if(c.bare) return sumTbl;
+
+  const tb=`<div class="tb">
+    <button class="${st.view==='branch'?'on':''}" data-act="view" data-t="${id}" data-v="branch">शाखागत</button>
+    <button class="${st.view==='all'?'on':''}" data-act="view" data-t="${id}" data-v="all">सबै सदस्य एकै सूची</button>
+    ${st.view==='branch'?`<button data-act="openall" data-t="${id}">सबै खोल्नुहोस्</button><button data-act="closeall" data-t="${id}">सबै बन्द</button>`:''}
+    <span class="grow"></span>
+    <span class="cnt">${fmt(tot.members)} सदस्य, ${fmt(tot.loans)} कर्जा</span>
+    <button data-act="csv" data-t="${id}">CSV डाउनलोड</button></div>`;
+  if(st.view==='all') return tb+`<div class="scroll">${memberTable(id,c.recs,true)}</div>`;
+  return tb+sumTbl+`<p class="sub" style="margin-top:8px">शाखाको नाममा थिच्नुहोस् — सदस्यगत विवरण खुल्छ। ${c.note||''}</p>`;
+}
+
+function memberTable(id,recs,withBr){
+  const st=TS[id], cols=st.cfg.memCols;
+  const col=cols.find(x=>x.k===st.mk)||cols[0];
+  const rows=recs.slice().sort((a,b)=>cmp(svOf(col,a),svOf(col,b))*st.md);
+  const arrow=k=>`<i class="ar">${st.mk===k?(st.md>0?'▲':'▼'):''}</i>`;
+  const head=`<tr><th>क्र.</th>${withBr?'<th>शाखा</th>':''}`+
+    cols.map(x=>`<th class="${x.num?'r':''}" data-act="msort" data-t="${id}" data-k="${x.k}">${esc(x.label)}${arrow(x.k)}</th>`).join('')+`</tr>`;
+  const body=rows.map((r,i)=>`<tr><td class="n">${i+1}</td>${withBr?`<td>${esc(r.br)}</td>`:''}`+
+    cols.map(x=>`<td class="${x.num?'r':''}">${x.html?x.html(r):disp(x,x.get(r))}</td>`).join('')+`</tr>`).join('');
+  return `<table class="tbl"><thead>${head}</thead><tbody>${body}</tbody></table>`;
+}
+
+function csvOut(id){
+  const st=TS[id], c=st.cfg, cols=c.memCols;
+  const q=v=>{ v=v==null?'':String(v); return /[",\r\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; };
+  const col=cols.find(x=>x.k===st.mk)||cols[0];
+  const lines=[['क्र.','शाखा',...cols.map(x=>x.label)].map(q).join(',')];
+  let n=0;
+  groupBy(c.recs).forEach(g=>{
+    g.recs.slice().sort((a,b)=>cmp(svOf(col,a),svOf(col,b))*st.md).forEach(r=>{
+      lines.push([++n,r.br,...cols.map(x=>x.get(r))].map(q).join(','));
+    });
+  });
+  const blob=new Blob(['\uFEFF'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`${c.csvName}_${S.rdate}.csv`;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+}
+
+/* ============ साझा स्तम्भहरू ============ */
+const M = {
+  code :{k:'mcode',label:'सदस्य कोड',get:r=>r.mcode},
+  name :{k:'name',label:'नाम',get:r=>r.name},
+  group:{k:'group',label:'समूह',get:r=>r.group},
+  phone:{k:'phone',label:'फोन',get:r=>r.phone},
+  acc  :{k:'acc',label:'कर्जा खाता',get:r=>r.acc},
+  prod :{k:'prod',label:'प्रोडक्ट',get:r=>r.prod},
+  days :{k:'days',label:'दिन',num:1,get:r=>r.days},
+  out  :{k:'out',label:'बाँकी साँवा',num:1,get:r=>r.out},
+  od   :{k:'od',label:'भाका नाघेको साँवा',num:1,get:r=>r.od},
+  oint :{k:'oint',label:'बाँकी ब्याज',num:1,get:r=>r.oint},
+  appr :{k:'approved',label:'स्वीकृत रकम',num:1,get:r=>r.approved},
+  mat  :{k:'mat',label:'म्याद सकिने मिति',get:r=>fdate(r.mat),sv:r=>r.mat==null?0:r.mat},
+  disb :{k:'disb',label:'कर्जा प्रवाह मिति',get:r=>fdate(r.disb),sv:r=>r.disb==null?0:r.disb},
+  cls  :{k:'ci',label:'हालको वर्गीकरण',get:r=>CLS[r.ci].ne,sv:r=>r.ci,html:r=>badge(r.ci)}
+};
+const S_MEM ={k:'members',label:'सदस्य',num:1,get:g=>g.members};
+const S_LOAN={k:'loans',label:'कर्जा',num:1,get:g=>g.loans};
+const S_OUT ={k:'out',label:'बाँकी साँवा',num:1,get:g=>g.out};
+const S_OD  ={k:'od',label:'भाका नाघेको साँवा',num:1,get:g=>g.od};
+
+function ribbon(a,total,big){
+  if(!total) return '<div class="ribbon"></div>';
+  return `<div class="ribbon${big?' big':''}">`+a.map((x,i)=>{
+    if(!x.out) return '';
+    const p=x.out/total*100;
+    return `<div class="seg c${i}" style="flex:${x.out} 1 0" title="${CLS[i].ne}: ${fmt(x.out)} (${p.toFixed(1)}%)">${big&&p>=6?p.toFixed(1)+'%':''}</div>`;
+  }).join('')+'</div>';
+}
+
+/* ============ ट्याब: ड्यासबोर्ड ============ */
+function tabDash(main){
+  const recs=S.recs, tot=totalOf(recs), a=classAgg(recs);
+  const sum=(from)=>a.slice(from).reduce((s,x)=>s+x.out,0);
+  const memFrom=(rs,from)=>new Set(rs.filter(r=>r.ci>=from).map(r=>r.mkey)).size;
+  const risk=sum(1), npl=sum(3);
+  const K=(cls,l,v,s1,s2)=>`<div class="kpi ${cls}"><div class="kl">${l}</div><div class="kv">${v}</div><div class="ks">${s1}</div><div class="ks">${s2}</div></div>`;
+  const kp=`<div class="kpis">`+
+    K('','कुल बाँकी साँवा',fmt(tot.out),`${fmt(tot.members)} सदस्य`,`${fmt(tot.loans)} कर्जा`)+
+    K('','भाका नाघेको साँवा',fmt(tot.od),`बाँकी साँवाको ${pctS(pctv(tot.od,tot.out))}`,'&nbsp;')+
+    K('risk','Risk (१ दिन माथि)',fmt(risk),`बाँकी साँवाको ${pctS(pctv(risk,tot.out))}`,`${fmt(memFrom(recs,1))} सदस्य`)+
+    K('npl','NPL (९१ दिन माथि)',fmt(npl),`बाँकी साँवाको ${pctS(pctv(npl,tot.out))}`,`${fmt(memFrom(recs,3))} सदस्य`)+`</div>`;
+
+  const legendRows=a.map((x,i)=>`<tr><td><i class="dot c${i}"></i>${CLS[i].ne}</td><td>${CLS[i].rng}</td>
+    <td class="r">${fmt(x.mem.size)}</td><td class="r">${fmt(x.loans)}</td><td class="r">${fmt(x.out)}</td>
+    <td class="r">${pctS(pctv(x.out,tot.out))}</td><td class="r">${x.od?fmt(x.od):DASH}</td></tr>`).join('');
+  const sub=(label,from,rng)=>{ const rs=recs.filter(r=>r.ci>=from); const t=totalOf(rs);
+    return `<tr class="tot"><td>${label}</td><td>${rng}</td><td class="r">${fmt(t.members)}</td><td class="r">${fmt(t.loans)}</td><td class="r">${fmt(t.out)}</td><td class="r">${pctS(pctv(t.out,tot.out))}</td><td class="r">${fmt(t.od)}</td></tr>`; };
+  const legend=`<div class="scroll"><table class="tbl"><thead><tr><th>वर्गीकरण</th><th>दिन</th><th class="r">सदस्य</th><th class="r">कर्जा</th><th class="r">बाँकी साँवा</th><th class="r">हिस्सा</th><th class="r">भाका नाघेको साँवा</th></tr></thead>
+    <tbody>${legendRows}${sub('Risk','1','१ दिन देखि माथि सबै')}${sub('NPL','3','९१ दिन देखि माथि सबै')}</tbody></table></div>`;
+
+  main.innerHTML=`<h2>सबै शाखाको सारांश</h2>
+    <p class="sub">रिपोर्टमा भएका ७ शाखाको कर्जा, बाँकी साँवा अनुसार।</p>${kp}
+    ${ribbon(a,tot.out,true)}
+    <div style="height:14px"></div>${legend}
+    <h3>शाखागत अवस्था</h3><div id="dashTbl"></div>`;
+
+  const G=groupBy(recs);
+  const agg=g=>g._a||(g._a=classAgg(g.recs));
+  const sumOut=(g,f)=>agg(g).slice(f).reduce((s,x)=>s+x.out,0);
+  const maxR=Math.max(1,...G.map(g=>pctv(sumOut(g,1),g.out))), maxN=Math.max(1,...G.map(g=>pctv(sumOut(g,3),g.out)));
+  const pc=(f,max,cls)=>g=>{ const v=pctv(sumOut(g,f),g.out); return `<span class="bar ${cls}" style="--w:${Math.min(100,v/max*100).toFixed(0)}%">${pctS(v)}</span>`; };
+  const amt=f=>g=>{ const v=sumOut(g,f); return v?`${fmt(v)}<small>${fmt(memFrom(g.recs,f))} सदस्य</small>`:DASH; };
+  const cols=[
+    {k:'mix',label:'बनावट',get:g=>g.out,html:g=>ribbon(agg(g),g.out)},
+    S_MEM,S_LOAN,S_OUT,
+    ...CLS.map((c,i)=>({k:'c'+i,label:c.ne,lh:`<i class="dot c${i}"></i>${c.ne}`,num:1,get:g=>agg(g)[i].out})),
+    {k:'risk',label:'Risk रकम',num:1,get:g=>sumOut(g,1),html:amt(1)},
+    {k:'riskp',label:'Risk %',num:1,get:g=>pctv(sumOut(g,1),g.out),html:pc(1,maxR,'')},
+    {k:'npl',label:'NPL रकम',num:1,get:g=>sumOut(g,3),html:amt(3)},
+    {k:'nplp',label:'NPL %',num:1,get:g=>pctv(sumOut(g,3),g.out),html:pc(3,maxN,'n')}
+  ];
+  drillRender('dash',$('#dashTbl'),{recs,sumCols:cols,memCols:[],msort:{k:null,dir:1},sort:null,bare:true});
+}
+
+/* ============ ट्याब: १ दिन भाका नाघेको ============ */
+function tabOv(main){
+  const u=UI.ov;
+  main.innerHTML=`<h2>भाका नाघेको सदस्य</h2>
+    <p class="sub">शाखागत जम्मा सदस्य र रकम — शाखाको नाममा थिचेपछि सदस्यगत विवरण।</p>
+    <div class="controls">
+      <label>भाका नाघेको दिन <input type="number" min="1" id="ovFrom" value="${u.from}"></label>
+      <label>देखि <input type="number" min="1" id="ovTo" value="${u.to==null?'':u.to}" placeholder="सीमा छैन"> सम्म</label>
+      <span class="hint">केवल १ दिन हेर्न दुवैमा १ राख्नुहोस्। "सम्म" खाली राखे "देखि" माथिका सबै (जस्तै १ राख्दा Risk) देखिन्छ।</span>
+    </div><div id="res"></div>`;
+  const upd=()=>{
+    const from=Math.max(1,+$('#ovFrom').value||1), tv=$('#ovTo').value.trim(), to=tv===''?Infinity:+tv;
+    UI.ov={from,to:tv===''?null:to};
+    const recs=S.recs.filter(r=>r.days>=from && r.days<=to);
+    drillRender('ov',$('#res'),{recs,csvName:'bhaka_naghyeko',
+      empty:'यो अवधिमा भाका नाघेको कुनै सदस्य भेटिएन।',
+      sumCols:[S_MEM,S_LOAN,{...S_OD,label:'भाका नाघेको साँवा (किस्ता)'},{...S_OUT,label:'बाँकी साँवा (कुल कर्जा)'},{k:'oint',label:'बाँकी ब्याज',num:1,get:g=>g.oint}],
+      memCols:[M.code,M.name,M.group,M.phone,M.acc,M.prod,M.days,M.od,M.out,M.oint,M.mat],
+      sort:null,msort:{k:'out',dir:-1}});
+  };
+  ['#ovFrom','#ovTo'].forEach(s=>$(s).addEventListener('input',upd)); upd();
+}
+
+/* ============ ट्याब: NPL मा जाँदै ============ */
+function tabNpl(main){
+  main.innerHTML=`<h2>NPL मा जाँदै गरेका सदस्य</h2>
+    <p class="sub">हाल १–९० दिनमा रहेका र केही दिनमा नतिरे ९१ दिन (NPL) पुग्ने कर्जा।</p>
+    <div class="controls"><label>अबको <input type="number" min="1" id="nplN" value="${UI.npl.n}"> दिनभित्र NPL मा पुग्ने</label>
+    <span class="hint">एक दिन पनि नतिरेमा ती कर्जाको "दिन" यति थपिन्छ भन्ने मानिएको छ। हाल १ दिन माथि भाका नाघेका कर्जा मात्र गनिन्छ।</span></div>
+    <div id="res"></div>`;
+  const BT=new Map(); groupBy(S.recs).forEach(g=>BT.set(g.key,{out:g.out,npl:g.recs.filter(r=>r.ci>=3).reduce((s,r)=>s+r.out,0)}));
+  const bt=g=>g.key==='*'?{out:S.recs.reduce((s,r)=>s+r.out,0),npl:S.recs.filter(r=>r.ci>=3).reduce((s,r)=>s+r.out,0)}:BT.get(g.key);
+  const upd=()=>{
+    const n=Math.max(1,Math.floor(+$('#nplN').value||1)); UI.npl.n=n;
+    const recs=S.recs.filter(r=>r.days>=1 && r.days<=90 && r.days+n>=91);
+    drillRender('npl',$('#res'),{recs,csvName:'npl_ma_jane',
+      empty:`अबको ${n} दिनभित्र NPL मा पुग्ने कुनै कर्जा भेटिएन।`,
+      sumCols:[S_MEM,S_LOAN,{...S_OUT,label:'NPL मा जाने रकम (बाँकी साँवा)'},S_OD,
+        {k:'cur',label:'हाल NPL रकम',num:1,get:g=>bt(g).npl},
+        {k:'curp',label:'हालको NPL %',num:1,get:g=>pctv(bt(g).npl,bt(g).out),html:g=>pctS(pctv(bt(g).npl,bt(g).out))},
+        {k:'newp',label:'सम्भावित NPL %',num:1,get:g=>pctv(bt(g).npl+g.out,bt(g).out),html:g=>`<b>${pctS(pctv(bt(g).npl+g.out,bt(g).out))}</b>`}],
+      memCols:[M.code,M.name,M.group,M.phone,M.acc,M.cls,M.days,
+        {k:'left',label:'NPL पुग्न बाँकी दिन',num:1,get:r=>91-r.days},
+        {k:'when',label:'NPL पुग्ने मिति',get:r=>fdate(repMs()+(91-r.days)*DAY),sv:r=>91-r.days},
+        M.out,M.od,M.oint,M.mat],
+      sort:null,msort:{k:'left',dir:1},
+      note:'सम्भावित NPL % = (हाल NPL + यी कर्जा) ÷ शाखाको कुल बाँकी साँवा।'});
+  };
+  $('#nplN').addEventListener('input',upd); upd();
+}
+
+/* ============ ट्याब: वर्गीकरण परिवर्तन ============ */
+function tabChg(main){
+  const u=UI.chg;
+  const chip=i=>`<label class="chip"><input type="checkbox" data-c="${i}" ${u.cls.includes(i)?'checked':''}>${CLS[i].ne} (${CLS[i].rng})</label>`;
+  main.innerHTML=`<h2>वर्गीकरण परिवर्तन हुन लागेका सदस्य</h2>
+    <p class="sub">कुन सदस्यको वर्गीकरण कति दिनपछि अर्को वर्गमा जान्छ।</p>
+    <div class="controls"><label>अबको <input type="number" min="1" id="chgN" value="${u.n}"> दिनभित्र परिवर्तन हुने</label>
+    <span>हालको वर्ग:</span>${[1,2,3,4].map(chip).join('')}
+    <span class="hint">फ्रेस (० दिन) कर्जा यसमा समावेश छैन — तिनको भाका नाघ्ने मिति किस्ता तालिकामा भर पर्छ। बाँकी दिन = अर्को वर्गको सुरु दिन − हालको दिन (बीचमा नतिरे)।</span></div>
+    <div id="res"></div>`;
+  const upd=()=>{
+    const n=Math.max(1,Math.floor(+$('#chgN').value||1)); u.n=n;
+    u.cls=[...document.querySelectorAll('[data-c]')].filter(x=>x.checked).map(x=>+x.dataset.c);
+    const recs=S.recs.filter(r=>u.cls.includes(r.ci) && NEXT_AT[r.ci]!=null && NEXT_AT[r.ci]-r.days<=n);
+    const T=t=>({k:'t'+t,label:`${CLS[t-1].ne} → ${CLS[t].ne}`,num:1,
+      get:g=>new Set(g.recs.filter(r=>r.ci===t-1).map(r=>r.mkey)).size,
+      html:g=>{ const rs=g.recs.filter(r=>r.ci===t-1); if(!rs.length) return DASH;
+        return `<b>${new Set(rs.map(r=>r.mkey)).size}</b><small>${fmt(rs.reduce((s,r)=>s+r.out,0))}</small>`; }});
+    drillRender('chg',$('#res'),{recs,csvName:'bargikaran_pariwartan',
+      empty:`अबको ${n} दिनभित्र वर्गीकरण परिवर्तन हुने कुनै कर्जा भेटिएन।`,
+      sumCols:[S_MEM,S_LOAN,S_OUT,T(2),T(3),T(4),T(5)],
+      memCols:[M.code,M.name,M.group,M.phone,M.acc,M.cls,M.days,
+        {k:'newc',label:'नयाँ वर्गीकरण',get:r=>CLS[r.ci+1].ne,sv:r=>r.ci+1,html:r=>badge(r.ci+1)},
+        {k:'left',label:'बाँकी दिन',num:1,get:r=>NEXT_AT[r.ci]-r.days},
+        {k:'when',label:'परिवर्तन हुने मिति',get:r=>fdate(repMs()+(NEXT_AT[r.ci]-r.days)*DAY),sv:r=>NEXT_AT[r.ci]-r.days},
+        M.out,M.od,M.mat],
+      sort:null,msort:{k:'left',dir:1},
+      note:'तलका स्तम्भमा सदस्य संख्या र तल सानो अक्षरमा बाँकी साँवा देखिन्छ।'});
+  };
+  $('#chgN').addEventListener('input',upd);
+  document.querySelectorAll('[data-c]').forEach(x=>x.addEventListener('change',upd)); upd();
+}
+
+/* ============ ट्याब: FID Loan ============ */
+// नियम: गत वि.सं. महिनाभन्दा अघि (कम्तीमा २ महिना अघि) प्रवाह भएको कर्जा, जसको बाँकी साँवा स्वीकृत रकम बराबर नै छ।
+// गत महिना प्रवाह भएकाको किस्ता चालु महिनाको अन्तिमसम्म पर्न सक्ने भएकाले FID मा गनिँदैन (३० दिन पनि गनिँदैन)।
+function fidInfo(r,cur){
+  if(!(r.approved>0) || r.out < r.approved-0.5 || r.disb==null) return null;
+  if(r.disb>=cur.startMs) return null;                 // चालु महिनामा प्रवाह भएको → FID होइन
+  const b=adToBS(r.disb), months=(cur.y*12+cur.m)-(b.y*12+b.m);
+  if(months<2) return null;                            // गत महिनामा प्रवाह → किस्ता यसै महिना पर्न सक्छ
+  return {months, bs:bsStr(b), bm:bsMonth(b)};
+}
+function tabFid(main){
+  const u=UI.fid, cur=adToBS(repMs());
+  main.innerHTML=`<h2>FID Loan — पहिलो किस्ता साँवा नघटेका कर्जा</h2>
+    <p class="sub">चालु महिना: <b>${bsMonth(cur)}</b> (सुरु: ${fdate(cur.startMs)}, ${cur.d} गते)। गत महिनामा प्रवाह भएका कर्जाको किस्ता यही महिनाको अन्तिमसम्म पर्न सक्ने भएकाले FID मा गनिएका छैनन्। गत महिनाभन्दा अघि (कम्तीमा २ महिना अघि) प्रवाह भएको र साँवा स्वीकृत रकम बराबर नै रहेका कर्जा मात्र FID मानिएका छन्।</p>
+    <div class="controls">
+    <label>प्रवाह भएको महिना <select id="fidM"><option value="all">२ महिना वा सो अघिका सबै</option><option value="two">२ महिना अघि मात्र (पहिलो किस्ता गत महिना पर्नुपर्ने)</option></select></label>
+    <label>भाका <select id="fidDay"><option value="all">सबै</option><option value="zero">० दिन (सिस्टममा भाका नाघेको छैन)</option><option value="pos">१ दिन वा माथि</option></select></label>
+    <span class="hint">रिपोर्ट मिति फेरे चालु महिना पनि सोही अनुसार फेरिन्छ।</span></div>
+    <div id="res"></div>`;
+  $('#fidM').value=u.m; $('#fidDay').value=u.dayf;
+  const upd=()=>{
+    const m=$('#fidM').value, df=$('#fidDay').value; u.m=m; u.dayf=df;
+    const recs=[];
+    S.recs.forEach(r=>{ const f=fidInfo(r,cur); if(!f) return;
+      if(m==='two'&&f.months!==2) return;
+      if(df==='zero'&&r.days!==0) return; if(df==='pos'&&r.days<1) return;
+      recs.push(Object.assign({},r,{fid:f})); });
+    drillRender('fid',$('#res'),{recs,csvName:'fid_loan',
+      empty:'FID शर्त पुगेको कुनै कर्जा भेटिएन।',
+      sumCols:[S_MEM,S_LOAN,{k:'appr',label:'स्वीकृत रकम',num:1,get:g=>g.approved},S_OUT,S_OD,
+        {k:'two',label:'२ महिना अघि प्रवाह (कर्जा)',num:1,get:g=>g.recs.filter(r=>r.fid.months===2).length},
+        {k:'pos',label:'यसमध्ये १+ दिन भाका नाघेको (कर्जा)',num:1,get:g=>g.recs.filter(r=>r.days>=1).length}],
+      memCols:[M.code,M.name,M.group,M.phone,M.acc,M.prod,
+        {k:'bs',label:'प्रवाह मिति (वि.सं.)',get:r=>r.fid.bs,sv:r=>r.disb},
+        M.disb,
+        {k:'bm',label:'प्रवाह भएको महिना',get:r=>r.fid.bm,sv:r=>r.disb},
+        {k:'mo',label:'कति महिना अघि',num:1,get:r=>r.fid.months},
+        {k:'inst',label:'किस्ता संख्या',num:1,get:r=>r.inst},
+        M.appr,M.out,M.days,M.od,M.cls,M.mat],
+      sort:null,msort:{k:'disb',dir:-1}});
+  };
+  $('#fidM').addEventListener('change',upd); $('#fidDay').addEventListener('change',upd); upd();
+}
+
+/* ============ पृष्ठ रेखाचित्र ============ */
+const TABS=[
+  {id:'dash',label:'ड्यासबोर्ड',fn:tabDash},
+  {id:'ov',label:'१ दिन भाका नाघेको',fn:tabOv},
+  {id:'npl',label:'NPL मा जाँदै',fn:tabNpl},
+  {id:'chg',label:'वर्गीकरण परिवर्तन',fn:tabChg},
+  {id:'fid',label:'FID Loan',fn:tabFid}
+];
+function banner(kind,msg){
+  const el=document.createElement('div'); el.className='banner '+kind; el.textContent=msg;
+  $('#banners').appendChild(el);
+}
+function clearBanners(){ $('#banners').innerHTML=''; if(!storeOK) banner('err','यो ब्राउजर/पेजमा स्टोरेज बन्द छ (जस्तै Google Sites को iframe) — रिफ्रेस गरेपछि रिपोर्ट हराउँछ, फेरि अपलोड गर्नुपर्छ।'); }
+
+function renderHeader(){
+  $('#rdate').value=S.rdate;
+  const fi=$('#finfo');
+  if(!S.recs.length){ fi.innerHTML='<span>रिपोर्ट अपलोड गर्नुहोस्</span>'; return; }
+  const mem=new Set(S.recs.map(r=>r.mkey)).size;
+  fi.innerHTML=`<span>फाइल: ${esc(S.file)}</span><span>अपलोड: ${esc(S.when)}</span><span>${BRANCHES.length} शाखा, ${fmt(mem)} सदस्य, ${fmt(S.recs.length)} कर्जा</span>`+
+    (S.others?`<span>अन्य ${fmt(S.others)} कर्जा (छानिएका शाखा बाहेक) छोडियो</span>`:'');
+}
+function render(){
+  clearBanners(); renderHeader();
+  const main=$('#main'), tabs=$('#tabs');
+  if(!S.recs.length){
+    tabs.hidden=true;
+    main.innerHTML=`<label class="drop" id="drop" for="file"><b>NRB 2.2 (N002) रिपोर्ट यहाँ ड्र्याग गर्नुहोस्</b>वा थिचेर CSV फाइल छान्नुहोस्। अपलोड हुनासाथ ७ शाखाको रिपोर्ट तयार हुन्छ।</label>
+      <div class="rules"><h3>वर्गीकरणको नियम (दिन अनुसार)</h3><table>
+      ${CLS.map((c,i)=>`<tr><td><i class="dot c${i}"></i>${c.ne}</td><td>${c.rng}</td></tr>`).join('')}
+      <tr><td><b>Risk</b></td><td>१ दिन देखि माथिका सबै</td></tr><tr><td><b>NPL</b></td><td>९१ दिन देखि माथिका सबै</td></tr></table></div>`;
+    return;
+  }
+  if(S.missing.length) banner('note','यी शाखा फाइलमा भेटिएनन्: '+S.missing.join(', '));
+  tabs.hidden=false;
+  tabs.innerHTML=TABS.map(t=>`<button role="tab" class="${t.id===S.tab?'on':''}" data-act="tab" data-id="${t.id}">${t.label}</button>`).join('');
+  (TABS.find(t=>t.id===S.tab)||TABS[0]).fn(main);
+}
+
+/* ============ इभेन्ट ============ */
+const ACT={
+  tab(el){ S.tab=el.dataset.id; render(); window.scrollTo({top:0}); },
+  toggle(el){ const st=TS[el.dataset.t], k=el.dataset.b; st.open.has(k)?st.open.delete(k):st.open.add(k); redraw(el.dataset.t); },
+  openall(el){ const st=TS[el.dataset.t]; BRANCHES.forEach(b=>st.open.add(b.key)); redraw(el.dataset.t); },
+  closeall(el){ const st=TS[el.dataset.t]; st.open.clear(); redraw(el.dataset.t); },
+  view(el){ TS[el.dataset.t].view=el.dataset.v; redraw(el.dataset.t); },
+  sort(el){ const st=TS[el.dataset.t], k=el.dataset.k;
+    if(st.sk===k) st.sd*=-1; else { st.sk=k; const col=st.cfg.sumCols.find(x=>x.k===k); st.sd=(col&&col.num)?-1:1; }
+    redraw(el.dataset.t); },
+  msort(el){ const st=TS[el.dataset.t], k=el.dataset.k;
+    if(st.mk===k) st.md*=-1; else { st.mk=k; const col=st.cfg.memCols.find(x=>x.k===k); st.md=(col&&col.num)?-1:1; }
+    redraw(el.dataset.t); },
+  csv(el){ csvOut(el.dataset.t); }
+};
+document.addEventListener('click',e=>{ const el=e.target.closest('[data-act]'); if(el && ACT[el.dataset.act]) ACT[el.dataset.act](el); });
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Enter' && e.key!==' ') return;
+  const el=e.target.closest('tr[data-act]'); if(el){ e.preventDefault(); ACT[el.dataset.act](el); }
+});
+$('#file').addEventListener('change',e=>{ if(e.target.files[0]) handleFile(e.target.files[0]); e.target.value=''; });
+$('#rdate').addEventListener('change',e=>{ if(e.target.value){ S.rdate=e.target.value; save(); if(S.recs.length) render(); } });
+window.addEventListener('dragover',e=>{ e.preventDefault(); const d=$('#drop'); if(d) d.classList.add('over'); });
+window.addEventListener('dragleave',()=>{ const d=$('#drop'); if(d) d.classList.remove('over'); });
+window.addEventListener('drop',e=>{ e.preventDefault(); const f=e.dataTransfer&&e.dataTransfer.files[0]; if(f) handleFile(f); });
+
+window.NRB={handleText,S,ACT,TS,UI};
+load(); render();
+</script>
+</body>
+</html>
